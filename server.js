@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');  // Importa el paquete cors
 const app = express();
 const port = 3001;
 
@@ -9,6 +10,9 @@ const clienteRoutes = require('./routes/clienteRoutes');
 
 // Middleware
 app.use(express.json());
+
+// Habilitar CORS para todas las rutas
+app.use(cors()); // Esto habilita CORS para todas las rutas y orígenes
 
 // Conectar a la base de datos
 const { connectDB } = require('./config/db');
