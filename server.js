@@ -5,10 +5,14 @@ const port = 3001;
 // Importar las rutas
 const indexRoutes = require('./routes/index');
 const userRoutes = require('./routes/userRoutes');
-const clienteRoutes = require('./routes/clienteRoutes'); // Nueva ruta
+const clienteRoutes = require('./routes/clienteRoutes');
 
 // Middleware
 app.use(express.json());
+
+// Conectar a la base de datos
+const { connectDB } = require('./config/db');
+connectDB(); // Establecer la conexión a la base de datos
 
 // Ruta raíz (opcional)
 app.get('/', (req, res) => {

@@ -1,12 +1,18 @@
-const { sql } = require('../db');
+const { sql } = require('../config/db');
 
 // Obtener todos los clientes de un usuario específico
 const getClientes = async (req, res) => {
     const { usuarioID } = req.query; // Filtro por usuario
+
     try {
-        const result = await sql.query`
-            SELECT * FROM Clientes WHERE UsuarioID = ${usuarioID}
-        `;
+        let query = 'SELECT * FROM Clientes'; // Consulta por todos los clientes
+
+        // Si se recibe usuarioID, añade el filtro
+        if (usuarioID) {
+            query += ` WHERE UsuarioID = ${usuarioID}`;
+        }
+
+        const result = await sql.query(query);
         res.status(200).json(result.recordset);
     } catch (err) {
         res.status(500).json({ error: 'Error al obtener los clientes', details: err.message });
