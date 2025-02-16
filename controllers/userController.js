@@ -1,9 +1,10 @@
 const { sql, connectDB } = require('../config/db');
 const jwt = require('jsonwebtoken');
 
+// Obtener todos los usuarios
 const getUsers = async (req, res) => {
   try {
-    await connectDB(); // Conectar a la BD
+    await connectDB(); // Conectar a la base de datos
     const result = await sql.query`SELECT * FROM Usuarios`;
     res.json(result.recordset);
   } catch (error) {
@@ -32,9 +33,19 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
+    // Verificar si el usuario es un contador y si su acceso ha expirado
+    if (user.Rol === 'contador') {
+      const currentDate = new Date();
+      const expirationDate = new Date(user.FechaExpiracion); // Asegúrate de que la fecha de expiración está en el formato correcto
+
+      if (currentDate > expirationDate) {
+        return res.status(403).json({ message: 'El acceso de este contador ha expirado' });
+      }
+    }
+
     // Generar el token JWT
     const token = jwt.sign(
-      { id: user.UsuarioID, email: user.Correo, role: user.Rol },
+      { id: user.UsuarioID, email: user.Correo, role: user.Rol }, // Mantener 'role' como 'Rol'
       'SECRET_KEY', // Asegúrate de usar una clave secreta segura
       { expiresIn: '1h' } // El token expira en 1 hora
     );
