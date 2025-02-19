@@ -1,5 +1,6 @@
 const express = require('express');
 const { loginUser, getUsers } = require('../controllers/userController');
+const { sql, connectDB } = require('../config/db'); // 🔹 Agregado para la conexión a la BD
 const router = express.Router();
 
 // Ruta para registrar un contador
@@ -19,6 +20,6 @@ router.post('/register', async (req, res) => {
 
 // Rutas para login y obtener usuarios
 router.post('/login', loginUser);
-router.get('/users', getUsers);
+router.get('/', getUsers); 
 
 module.exports = router;

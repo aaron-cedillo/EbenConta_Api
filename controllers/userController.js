@@ -45,13 +45,14 @@ const loginUser = async (req, res) => {
 
     // Generar el token JWT
     const token = jwt.sign(
-      { id: user.UsuarioID, email: user.Correo, role: user.Rol }, // Mantener 'role' como 'Rol'
-      'SECRET_KEY', // Asegúrate de usar una clave secreta segura
+      { id: user.UsuarioID, email: user.Correo, rol: user.Rol },
+      process.env.JWT_SECRET_KEY, // Usamos una variable de entorno para la clave secreta
       { expiresIn: '1h' } // El token expira en 1 hora
     );
 
-    // Retornar el token en la respuesta
-    res.json({ token });
+    // Retornar el token y el rol solo una vez
+    return res.json({ token, rol: user.Rol });
+
   } catch (error) {
     console.error('Error al iniciar sesión:', error);
     res.status(500).json({ message: 'Error al iniciar sesión', error: error.message });
