@@ -35,11 +35,50 @@ const editarContador = async (req, res) => {
   const { nombre, correo, contrasena, fechaExpiracion } = req.body;
 
   try {
-    await sql.query`
-      UPDATE Usuarios
-      SET Nombre = ${nombre}, Correo = ${correo}, Contrasena = ${contrasena}, FechaExpiracion = ${fechaExpiracion}
-      WHERE UsuarioID = ${id} AND Rol = 'contador';
-    `;
+    let updateQuery = 'UPDATE Usuarios SET ';
+    let updateValues = [];
+    let valueCount = 1;
+
+    // Solo añadimos un campo a la consulta si tiene un valor
+    if (nombre) {
+      updateQuery += `Nombre = @nombre, `;
+      updateValues.push({ name: 'nombre', type: sql.VarChar, value: nombre });
+    }
+
+    if (correo) {
+      updateQuery += `Correo = @correo, `;
+      updateValues.push({ name: 'correo', type: sql.VarChar, value: correo });
+    }
+
+    if (contrasena) {
+      updateQuery += `Contrasena = @contrasena, `;
+      updateValues.push({ name: 'contrasena', type: sql.VarChar, value: contrasena });
+    }
+
+    if (fechaExpiracion) {
+      updateQuery += `FechaExpiracion = @fechaExpiracion, `;
+      updateValues.push({ name: 'fechaExpiracion', type: sql.Date, value: fechaExpiracion });
+    }
+
+    // Si no se proporcionó ningún valor para actualizar
+    if (updateValues.length === 0) {
+      return res.status(400).json({ message: 'No se proporcionaron datos para actualizar' });
+    }
+
+    // Eliminar la última coma extra de la consulta
+    updateQuery = updateQuery.slice(0, -2);
+
+    // Agregar la condición WHERE para actualizar solo el contador correcto
+    updateQuery += ` WHERE UsuarioID = @id AND Rol = 'contador'`;
+
+    // Añadir el id a los parámetros de la consulta
+    updateValues.push({ name: 'id', type: sql.Int, value: id });
+
+    // Ejecutar la consulta de actualización
+    await sql.query({
+      text: updateQuery,
+      parameters: updateValues,
+    });
 
     res.json({ message: 'Contador actualizado exitosamente' });
   } catch (error) {
