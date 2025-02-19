@@ -25,7 +25,7 @@ const obtenerContadores = async (req, res) => {
     res.json(result.recordset);
   } catch (error) {
     console.error('Error al obtener los contadores:', error);
-    res.status(500).json({ message: 'Error al obtener los contadores', error: error.message });
+    res.status(500).json({ message: 'Error al obtener los contadores' });
   }
 };
 
@@ -50,7 +50,8 @@ const editarContador = async (req, res) => {
       updateValues.push({ name: 'correo', type: sql.VarChar, value: correo });
     }
 
-    if (contrasena) {
+    // Si se proporciona la contraseña, actualízala
+    if (contrasena !== undefined) {
       updateQuery += `Contrasena = @contrasena, `;
       updateValues.push({ name: 'contrasena', type: sql.VarChar, value: contrasena });
     }
@@ -87,17 +88,4 @@ const editarContador = async (req, res) => {
   }
 };
 
-// Eliminar un contador
-const eliminarContador = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    await sql.query`DELETE FROM Usuarios WHERE UsuarioID = ${id} AND Rol = 'contador'`;
-    res.json({ message: 'Contador eliminado exitosamente' });
-  } catch (error) {
-    console.error('Error al eliminar el contador:', error);
-    res.status(500).json({ message: 'Error al eliminar el contador', error: error.message });
-  }
-};
-
-module.exports = { registrarContador, obtenerContadores, editarContador, eliminarContador };
+module.exports = { registrarContador, obtenerContadores, editarContador };
