@@ -1,19 +1,17 @@
 const express = require('express');
-const {
-    getClientes,
-    getClienteById,
-    createCliente,
-    updateCliente,
-    deleteCliente,
-} = require('../controllers/clienteController');
-
 const router = express.Router();
+const { getClientes, addCliente, editCliente, deleteCliente } = require('../controllers/clienteController');
 
-// Rutas de Clientes
-router.get('/', getClientes); // Obtener todos los clientes por usuarioID (query)
-router.get('/:id', getClienteById); // Obtener un cliente por ID
-router.post('/', createCliente); // Crear un nuevo cliente
-router.put('/:id', updateCliente); // Actualizar un cliente
-router.delete('/:id', deleteCliente); // Eliminar un cliente
+// Listar clientes
+router.get('/:userId', getClientes);
+
+// Agregar cliente
+router.post('/', addCliente);
+
+// Editar cliente
+router.put('/:clienteId', editCliente);
+
+// Eliminar cliente
+router.delete('/:clienteId', deleteCliente);
 
 module.exports = router;

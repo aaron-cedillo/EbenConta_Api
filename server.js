@@ -8,8 +8,8 @@ const port = 3001;
 // Importar las rutas
 const indexRoutes = require('./routes/index');
 const userRoutes = require('./routes/userRoutes');
-const clienteRoutes = require('./routes/clienteRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const contadorRoutes = require('./routes/contadorRoutes');
 
 // Middleware
 app.use(express.json());
@@ -29,8 +29,8 @@ app.get('/', (req, res) => {
 // Rutas
 app.use('/api', indexRoutes); // Rutas del índice con prefijo '/api'
 app.use('/api/users', userRoutes); // Rutas de usuarios con prefijo '/api/users'
-app.use('/api/clientes', clienteRoutes); // Rutas de clientes con prefijo '/api/clientes'
 app.use('/api/admin', adminRoutes); // Rutas de administración con prefijo '/api/admin'
+app.use('/api/contador', contadorRoutes); // Rutas de contadores con prefijo '/api/contador'
 
 // Iniciar el servidor
 app.listen(port, () => {

@@ -1,93 +1,78 @@
-const { sql } = require('../config/db');
+const db = require('../config/db'); 
 
-// Obtener todos los clientes de un usuario específico
+// Listar clientes de un contador
 const getClientes = async (req, res) => {
-    const { usuarioID } = req.query; // Filtro por usuario
-
-    try {
-        let query = 'SELECT * FROM Clientes'; // Consulta por todos los clientes
-
-        // Si se recibe usuarioID, añade el filtro
-        if (usuarioID) {
-            query += ` WHERE UsuarioID = ${usuarioID}`;
-        }
-
-        const result = await sql.query(query);
-        res.status(200).json(result.recordset);
-    } catch (err) {
-        res.status(500).json({ error: 'Error al obtener los clientes', details: err.message });
-    }
+  try {
+    const { userId } = req.params; // El ID del contador se pasa como parámetro
+    const clientes = await Cliente.find({ UsuarioID: userId });
+    res.json(clientes);
+  } catch (error) {
+    console.error("Error al obtener clientes:", error);
+    res.status(500).json({ message: "Error al obtener clientes" });
+  }
 };
 
-// Obtener un cliente por ID
-const getClienteById = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const result = await sql.query`
-            SELECT * FROM Clientes WHERE ClienteID = ${id}
-        `;
-        if (result.recordset.length === 0) {
-            return res.status(404).json({ error: 'Cliente no encontrado' });
-        }
-        res.status(200).json(result.recordset[0]);
-    } catch (err) {
-        res.status(500).json({ error: 'Error al obtener el cliente', details: err.message });
-    }
+// Agregar un cliente
+const addCliente = async (req, res) => {
+  try {
+    const { nombre, rfc, correo, telefono, direccion, usuarioId } = req.body;
+    const nuevoCliente = new Cliente({
+      Nombre: nombre,
+      RFC: rfc,
+      Correo: correo,
+      Telefono: telefono,
+      Direccion: direccion,
+      UsuarioID: usuarioId, // Relación con el contador
+    });
+
+    await nuevoCliente.save();
+    res.status(201).json(nuevoCliente);
+  } catch (error) {
+    console.error("Error al agregar cliente:", error);
+    res.status(500).json({ message: "Error al agregar cliente" });
+  }
 };
 
-// Crear un nuevo cliente
-const createCliente = async (req, res) => {
-    const { nombre, rfc, correo, telefono, direccion, usuarioID } = req.body;
-    try {
-        await sql.query`
-            INSERT INTO Clientes (Nombre, RFC, Correo, Telefono, Direccion, UsuarioID)
-            VALUES (${nombre}, ${rfc}, ${correo}, ${telefono}, ${direccion}, ${usuarioID})
-        `;
-        res.status(201).json({ message: 'Cliente creado exitosamente' });
-    } catch (err) {
-        res.status(500).json({ error: 'Error al crear el cliente', details: err.message });
-    }
-};
+// Editar un cliente
+const editCliente = async (req, res) => {
+  try {
+    const { clienteId } = req.params;
+    const { nombre, rfc, correo, telefono, direccion } = req.body;
 
-// Actualizar un cliente existente
-const updateCliente = async (req, res) => {
-    const { id } = req.params;
-    const { nombre, rfc, correo, telefono, direccion, usuarioID } = req.body;
-    try {
-        const result = await sql.query`
-            UPDATE Clientes
-            SET Nombre = ${nombre}, RFC = ${rfc}, Correo = ${correo}, Telefono = ${telefono}, Direccion = ${direccion}, UsuarioID = ${usuarioID}
-            WHERE ClienteID = ${id}
-        `;
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: 'Cliente no encontrado' });
-        }
-        res.status(200).json({ message: 'Cliente actualizado exitosamente' });
-    } catch (err) {
-        res.status(500).json({ error: 'Error al actualizar el cliente', details: err.message });
+    const cliente = await Cliente.findByIdAndUpdate(clienteId, {
+      Nombre: nombre,
+      RFC: rfc,
+      Correo: correo,
+      Telefono: telefono,
+      Direccion: direccion,
+    }, { new: true });
+
+    if (!cliente) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
     }
+
+    res.json(cliente);
+  } catch (error) {
+    console.error("Error al editar cliente:", error);
+    res.status(500).json({ message: "Error al editar cliente" });
+  }
 };
 
 // Eliminar un cliente
 const deleteCliente = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const result = await sql.query`
-            DELETE FROM Clientes WHERE ClienteID = ${id}
-        `;
-        if (result.rowsAffected[0] === 0) {
-            return res.status(404).json({ error: 'Cliente no encontrado' });
-        }
-        res.status(200).json({ message: 'Cliente eliminado exitosamente' });
-    } catch (err) {
-        res.status(500).json({ error: 'Error al eliminar el cliente', details: err.message });
+  try {
+    const { clienteId } = req.params;
+    const cliente = await Cliente.findByIdAndDelete(clienteId);
+
+    if (!cliente) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
     }
+
+    res.json({ message: "Cliente eliminado" });
+  } catch (error) {
+    console.error("Error al eliminar cliente:", error);
+    res.status(500).json({ message: "Error al eliminar cliente" });
+  }
 };
 
-module.exports = {
-    getClientes,
-    getClienteById,
-    createCliente,
-    updateCliente,
-    deleteCliente,
-};
+module.exports = { getClientes, addCliente, editCliente, deleteCliente };
