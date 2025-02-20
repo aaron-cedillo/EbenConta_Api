@@ -5,7 +5,6 @@ const registrarContador = async (req, res) => {
   const { nombre, correo, contrasena, fechaExpiracion } = req.body;
 
   try {
-    // Insertar el nuevo contador en la base de datos
     await sql.query`
       INSERT INTO Usuarios (Nombre, Correo, Contrasena, Rol, FechaExpiracion)
       VALUES (${nombre}, ${correo}, ${contrasena}, 'contador', ${fechaExpiracion});
@@ -37,49 +36,28 @@ const editarContador = async (req, res) => {
   try {
     let updateQuery = 'UPDATE Usuarios SET ';
     let updateValues = [];
-    let valueCount = 1;
 
-    // Solo añadimos un campo a la consulta si tiene un valor
     if (nombre) {
-      updateQuery += `Nombre = @nombre, `;
-      updateValues.push({ name: 'nombre', type: sql.VarChar, value: nombre });
+      updateQuery += `Nombre = '${nombre}', `;
     }
-
     if (correo) {
-      updateQuery += `Correo = @correo, `;
-      updateValues.push({ name: 'correo', type: sql.VarChar, value: correo });
+      updateQuery += `Correo = '${correo}', `;
     }
-
-    // Si se proporciona la contraseña, actualízala
     if (contrasena !== undefined) {
-      updateQuery += `Contrasena = @contrasena, `;
-      updateValues.push({ name: 'contrasena', type: sql.VarChar, value: contrasena });
+      updateQuery += `Contrasena = '${contrasena}', `;
     }
-
     if (fechaExpiracion) {
-      updateQuery += `FechaExpiracion = @fechaExpiracion, `;
-      updateValues.push({ name: 'fechaExpiracion', type: sql.Date, value: fechaExpiracion });
+      updateQuery += `FechaExpiracion = '${fechaExpiracion}', `;
     }
 
-    // Si no se proporcionó ningún valor para actualizar
-    if (updateValues.length === 0) {
+    if (updateQuery.endsWith('SET ')) {
       return res.status(400).json({ message: 'No se proporcionaron datos para actualizar' });
     }
 
-    // Eliminar la última coma extra de la consulta
     updateQuery = updateQuery.slice(0, -2);
+    updateQuery += ` WHERE UsuarioID = ${id} AND Rol = 'contador'`;
 
-    // Agregar la condición WHERE para actualizar solo el contador correcto
-    updateQuery += ` WHERE UsuarioID = @id AND Rol = 'contador'`;
-
-    // Añadir el id a los parámetros de la consulta
-    updateValues.push({ name: 'id', type: sql.Int, value: id });
-
-    // Ejecutar la consulta de actualización
-    await sql.query({
-      text: updateQuery,
-      parameters: updateValues,
-    });
+    await sql.query(updateQuery);
 
     res.json({ message: 'Contador actualizado exitosamente' });
   } catch (error) {
@@ -88,4 +66,17 @@ const editarContador = async (req, res) => {
   }
 };
 
-module.exports = { registrarContador, obtenerContadores, editarContador };
+// Eliminar un contador
+const eliminarContador = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await sql.query`DELETE FROM Usuarios WHERE UsuarioID = ${id} AND Rol = 'contador'`;
+    res.json({ message: 'Contador eliminado exitosamente' });
+  } catch (error) {
+    console.error('Error al eliminar el contador:', error);
+    res.status(500).json({ message: 'Error al eliminar el contador', error: error.message });
+  }
+};
+
+module.exports = { registrarContador, obtenerContadores, editarContador, eliminarContador };
