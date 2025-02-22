@@ -1,21 +1,20 @@
-// API/routes/clienteRoutes.js
 const express = require('express');
 const router = express.Router();
 const clienteController = require('../controllers/clienteController');
 
 // Obtener todos los clientes
-router.get('/', clienteController.getClientes);
+router.get('/clientes', clienteController.getClientes);
 
 // Agregar un nuevo cliente
-router.post('/', clienteController.addCliente);
+router.post('/clientes', clienteController.addCliente);
 
 // Editar un cliente
-router.put('/:id', clienteController.updateCliente);
+router.put('/clientes/:id', clienteController.updateCliente);
 
 // Eliminar un cliente
-router.delete('/:id', clienteController.deleteCliente);
+router.delete('/clientes/:id', clienteController.deleteCliente);
 
-// Buscar un cliente
-router.get('/search', clienteController.searchClientes);
+// Buscar clientes por nombre o RFC
+router.get('/clientes/search', clienteController.searchClientes);
 
 module.exports = router;
