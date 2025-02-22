@@ -1,78 +1,81 @@
-const db = require('../config/db'); 
+// API/controllers/clienteController.js
+const { sql } = require('../config/db');
 
-// Listar clientes de un contador
-const getClientes = async (req, res) => {
+// Obtener todos los clientes
+exports.getClientes = async (req, res) => {
   try {
-    const { userId } = req.params; // El ID del contador se pasa como parámetro
-    const clientes = await Cliente.find({ UsuarioID: userId });
-    res.json(clientes);
+    const result = await sql.query`SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID FROM Clientes`;
+    res.status(200).json(result.recordset); // En SQL Server usamos recordset para obtener los resultados
   } catch (error) {
-    console.error("Error al obtener clientes:", error);
-    res.status(500).json({ message: "Error al obtener clientes" });
+    console.error("Error al obtener los clientes", error);
+    res.status(500).json({ message: "Error al obtener los clientes", error });
   }
 };
 
-// Agregar un cliente
-const addCliente = async (req, res) => {
+// Agregar un nuevo cliente
+exports.addCliente = async (req, res) => {
+  const { nombre, rfc, correo, telefono, direccion, usuarioId } = req.body;
   try {
-    const { nombre, rfc, correo, telefono, direccion, usuarioId } = req.body;
-    const nuevoCliente = new Cliente({
-      Nombre: nombre,
-      RFC: rfc,
-      Correo: correo,
-      Telefono: telefono,
-      Direccion: direccion,
-      UsuarioID: usuarioId, // Relación con el contador
-    });
-
-    await nuevoCliente.save();
-    res.status(201).json(nuevoCliente);
+    const result = await sql.query`
+      INSERT INTO Clientes (Nombre, RFC, Correo, Telefono, Direccion, UsuarioID) 
+      VALUES (${nombre}, ${rfc}, ${correo}, ${telefono}, ${direccion}, ${usuarioId})
+    `;
+    res.status(201).json({ message: 'Cliente agregado correctamente' });
   } catch (error) {
-    console.error("Error al agregar cliente:", error);
-    res.status(500).json({ message: "Error al agregar cliente" });
+    console.error("Error al agregar cliente", error);
+    res.status(500).json({ message: "Error al agregar cliente", error });
   }
 };
 
 // Editar un cliente
-const editCliente = async (req, res) => {
+exports.updateCliente = async (req, res) => {
+  const { id } = req.params;
+  const { nombre, rfc, correo, telefono, direccion } = req.body;
   try {
-    const { clienteId } = req.params;
-    const { nombre, rfc, correo, telefono, direccion } = req.body;
-
-    const cliente = await Cliente.findByIdAndUpdate(clienteId, {
-      Nombre: nombre,
-      RFC: rfc,
-      Correo: correo,
-      Telefono: telefono,
-      Direccion: direccion,
-    }, { new: true });
-
-    if (!cliente) {
+    const result = await sql.query`
+      UPDATE Clientes
+      SET Nombre = ${nombre}, RFC = ${rfc}, Correo = ${correo}, Telefono = ${telefono}, Direccion = ${direccion}
+      WHERE ClienteID = ${id}
+    `;
+    if (result.rowsAffected[0] === 0) {
       return res.status(404).json({ message: "Cliente no encontrado" });
     }
-
-    res.json(cliente);
+    res.status(200).json({ message: 'Cliente actualizado correctamente' });
   } catch (error) {
-    console.error("Error al editar cliente:", error);
-    res.status(500).json({ message: "Error al editar cliente" });
+    console.error("Error al actualizar cliente", error);
+    res.status(500).json({ message: "Error al actualizar cliente", error });
   }
 };
 
 // Eliminar un cliente
-const deleteCliente = async (req, res) => {
+exports.deleteCliente = async (req, res) => {
+  const { id } = req.params;
   try {
-    const { clienteId } = req.params;
-    const cliente = await Cliente.findByIdAndDelete(clienteId);
-
-    if (!cliente) {
+    const result = await sql.query`
+      DELETE FROM Clientes WHERE ClienteID = ${id}
+    `;
+    if (result.rowsAffected[0] === 0) {
       return res.status(404).json({ message: "Cliente no encontrado" });
     }
-
-    res.json({ message: "Cliente eliminado" });
+    res.status(200).json({ message: "Cliente eliminado correctamente" });
   } catch (error) {
-    console.error("Error al eliminar cliente:", error);
-    res.status(500).json({ message: "Error al eliminar cliente" });
+    console.error("Error al eliminar cliente", error);
+    res.status(500).json({ message: "Error al eliminar cliente", error });
   }
 };
 
-module.exports = { getClientes, addCliente, editCliente, deleteCliente };
+// Buscar clientes
+exports.searchClientes = async (req, res) => {
+  const { search } = req.query; // Buscar por nombre o RFC
+  try {
+    const result = await sql.query`
+      SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID
+      FROM Clientes
+      WHERE Nombre LIKE '%' + ${search} + '%' OR RFC LIKE '%' + ${search} + '%'
+    `;
+    res.status(200).json(result.recordset); // Devuelve los resultados encontrados
+  } catch (error) {
+    console.error("Error al buscar clientes", error);
+    res.status(500).json({ message: "Error al buscar clientes", error });
+  }
+};
