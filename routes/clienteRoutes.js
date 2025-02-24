@@ -14,7 +14,4 @@ router.put('/clientes/:id', clienteController.updateCliente);
 // Eliminar un cliente
 router.delete('/clientes/:id', clienteController.deleteCliente);
 
-// Buscar clientes por nombre o RFC
-router.get('/clientes/search', clienteController.searchClientes);
-
 module.exports = router;

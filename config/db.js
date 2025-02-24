@@ -3,11 +3,11 @@ const sql = require('mssql');
 const config = {
   user: 'AARON',
   password: 'valentinaikeR-3',
-  server: 'localhost', // O tu servidor de base de datos
+  server: 'localhost', 
   database: 'EbenConta',
   options: {
-    encrypt: true, // Si usas Azure, o si es necesario para tu conexión
-    trustServerCertificate: true, // Para evitar problemas con certificados no confiables
+    encrypt: true, 
+    trustServerCertificate: true, 
   },
 };
 
