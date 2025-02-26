@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
+const authenticateJWT = require('../middlewares/authenticateJWT');
 const clienteController = require('../controllers/clienteController');
 
 // Obtener todos los clientes
-router.get('/', clienteController.getClientes);
+router.get('/', authenticateJWT, clienteController.getClientes);
 
 // Agregar un nuevo cliente
-router.post('/', clienteController.addCliente);
+router.post('/', authenticateJWT, clienteController.addCliente);
 
 // Editar un cliente
-router.put('/:id', clienteController.updateCliente);
+router.put('/:id', authenticateJWT, clienteController.updateCliente);
 
 // Eliminar un cliente
-router.delete('/:id', clienteController.deleteCliente);
+router.delete('/:id', authenticateJWT, clienteController.deleteCliente);
 
 module.exports = router;

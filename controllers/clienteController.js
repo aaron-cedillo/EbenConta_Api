@@ -1,11 +1,15 @@
 const { sql } = require('../config/db');
 
-// Obtener todos los clientes
+// Obtener todos los clientes del usuario autenticado
 exports.getClientes = async (req, res) => {
+  const userId = req.user.id;  // El `id` del usuario viene del token JWT
+
   try {
+    // Filtramos los clientes por el `UsuarioID` del usuario autenticado
     const result = await sql.query`
       SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID
       FROM Clientes
+      WHERE UsuarioID = ${userId}
     `;
     res.status(200).json(result.recordset);
   } catch (error) {
@@ -16,14 +20,16 @@ exports.getClientes = async (req, res) => {
 
 // Agregar un nuevo cliente
 exports.addCliente = async (req, res) => {
-  const { nombre, rfc, correo, telefono, direccion, usuarioId } = req.body;
+  const { nombre, rfc, correo, telefono, direccion } = req.body;
+  const usuarioId = req.user.id;  // Usamos el UsuarioID del usuario autenticado
   
   // Validación básica
-  if (!nombre || !rfc || !correo || !telefono || !direccion || !usuarioId) {
+  if (!nombre || !rfc || !correo || !telefono || !direccion) {
     return res.status(400).json({ message: "Todos los campos son obligatorios" });
   }
 
   try {
+    // Insertamos el cliente con el `UsuarioID` del usuario autenticado
     await sql.query`
       INSERT INTO Clientes (Nombre, RFC, Correo, Telefono, Direccion, UsuarioID) 
       VALUES (${nombre}, ${rfc}, ${correo}, ${telefono}, ${direccion}, ${usuarioId})
@@ -39,13 +45,27 @@ exports.addCliente = async (req, res) => {
 exports.updateCliente = async (req, res) => {
   const { id } = req.params;  // Tomamos el id desde los parámetros de la URL
   const { nombre, rfc, correo, telefono, direccion } = req.body;  // Tomamos los datos desde el body
-  
+  const usuarioId = req.user.id;  // Usamos el `UsuarioID` del usuario autenticado
+
   // Validamos que al menos uno de los campos sea proporcionado
   if (!nombre && !rfc && !correo && !telefono && !direccion) {
     return res.status(400).json({ message: "Debe proporcionar al menos un dato para actualizar" });
   }
 
   try {
+    // Verificamos si el cliente pertenece al usuario autenticado
+    const cliente = await sql.query`
+      SELECT UsuarioID FROM Clientes WHERE ClienteID = ${id}
+    `;
+    
+    if (cliente.recordset.length === 0) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    if (cliente.recordset[0].UsuarioID !== usuarioId) {
+      return res.status(403).json({ message: "No tienes permiso para editar este cliente" });
+    }
+
     let updateQuery = 'UPDATE Clientes SET ';
     const updateParams = [];
 
@@ -101,8 +121,22 @@ exports.updateCliente = async (req, res) => {
 // Eliminar un cliente
 exports.deleteCliente = async (req, res) => {
   const { id } = req.params;
+  const usuarioId = req.user.id;  // Usamos el `UsuarioID` del usuario autenticado
 
   try {
+    // Verificamos si el cliente pertenece al usuario autenticado
+    const cliente = await sql.query`
+      SELECT UsuarioID FROM Clientes WHERE ClienteID = ${id}
+    `;
+    
+    if (cliente.recordset.length === 0) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    if (cliente.recordset[0].UsuarioID !== usuarioId) {
+      return res.status(403).json({ message: "No tienes permiso para eliminar este cliente" });
+    }
+
     const result = await sql.query`
       DELETE FROM Clientes WHERE ClienteID = ${id}
     `;
