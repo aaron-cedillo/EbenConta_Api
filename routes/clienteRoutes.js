@@ -3,15 +3,15 @@ const router = express.Router();
 const clienteController = require('../controllers/clienteController');
 
 // Obtener todos los clientes
-router.get('/clientes', clienteController.getClientes);
+router.get('/', clienteController.getClientes);
 
 // Agregar un nuevo cliente
-router.post('/clientes', clienteController.addCliente);
+router.post('/', clienteController.addCliente);
 
 // Editar un cliente
-router.put('/clientes/:id', clienteController.updateCliente);
+router.put('/:id', clienteController.updateCliente);
 
 // Eliminar un cliente
-router.delete('/clientes/:id', clienteController.deleteCliente);
+router.delete('/:id', clienteController.deleteCliente);
 
 module.exports = router;

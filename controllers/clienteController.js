@@ -47,22 +47,27 @@ exports.updateCliente = async (req, res) => {
 
   try {
     let updateQuery = 'UPDATE Clientes SET ';
-    let updateValues = [];
+    const updateParams = [];
 
     if (nombre) {
-      updateQuery += `Nombre = ${nombre}, `;
+      updateQuery += `Nombre = @nombre, `;
+      updateParams.push({ name: 'nombre', type: sql.NVarChar, value: nombre });
     }
     if (rfc) {
-      updateQuery += `RFC = ${rfc}, `;
+      updateQuery += `RFC = @rfc, `;
+      updateParams.push({ name: 'rfc', type: sql.NVarChar, value: rfc });
     }
     if (correo) {
-      updateQuery += `Correo = ${correo}, `;
+      updateQuery += `Correo = @correo, `;
+      updateParams.push({ name: 'correo', type: sql.NVarChar, value: correo });
     }
     if (telefono) {
-      updateQuery += `Telefono = ${telefono}, `;
+      updateQuery += `Telefono = @telefono, `;
+      updateParams.push({ name: 'telefono', type: sql.NVarChar, value: telefono });
     }
     if (direccion) {
-      updateQuery += `Direccion = ${direccion}, `;
+      updateQuery += `Direccion = @direccion, `;
+      updateParams.push({ name: 'direccion', type: sql.NVarChar, value: direccion });
     }
 
     // Si no se proporcionaron datos para actualizar
@@ -72,9 +77,19 @@ exports.updateCliente = async (req, res) => {
 
     // Quitamos la coma final y completamos la cláusula WHERE
     updateQuery = updateQuery.slice(0, -2);
-    updateQuery += ` WHERE ClienteID = ${id}`;
+    updateQuery += ` WHERE ClienteID = @id`;
 
-    await sql.query(updateQuery);
+    updateParams.push({ name: 'id', type: sql.Int, value: id });
+
+    const request = new sql.Request();
+    
+    // Agregamos los parámetros
+    updateParams.forEach(param => {
+      request.input(param.name, param.type, param.value);
+    });
+
+    // Ejecutamos la consulta con los parámetros
+    await request.query(updateQuery);
 
     res.status(200).json({ message: 'Cliente actualizado correctamente' });
   } catch (error) {
