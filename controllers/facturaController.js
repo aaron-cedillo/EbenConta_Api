@@ -1,4 +1,46 @@
 const { sql } = require("../config/db");  // Usamos sql desde la configuración de la base de datos
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+const xml2js = require('xml2js');
+
+const procesarXML = (rutaArchivo) => {
+    const xml = fs.readFileSync(rutaArchivo, 'utf-8');  // Lee el archivo XML
+    let jsonData = null;
+
+    xml2js.parseString(xml, { explicitArray: false }, (err, result) => {
+        if (err) throw new Error("Error al procesar el XML");
+        jsonData = result;
+    });
+
+    return jsonData;
+};
+
+// Configuración de multer para guardar los archivos en "uploads/xml"
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, "../uploads/xml");
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true }); // Crea la carpeta si no existe
+        }
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname)); // Renombra el archivo
+    },
+});
+
+// Filtro para aceptar solo archivos XML
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === "text/xml" || file.mimetype === "application/xml") {
+        cb(null, true);
+    } else {
+        cb(new Error("Solo se permiten archivos XML"), false);
+    }
+};
+
+// Middleware de subida de archivos
+const upload = multer({ storage, fileFilter });
 
 // Obtener todas las facturas de un cliente, con opción de filtrar por fecha
 const obtenerFacturasPorCliente = async (req, res) => {
@@ -32,13 +74,19 @@ const obtenerFacturaPorID = async (req, res) => {
     try {
         const { FacturaID } = req.params;
 
+        // Validar que FacturaID sea un número válido
+        const facturaIDInt = parseInt(FacturaID, 10);
+        if (isNaN(facturaIDInt)) {
+            return res.status(400).json({ error: "FacturaID debe ser un número válido" });
+        }
+
         const query = `SELECT * FROM Facturas WHERE FacturaID = @FacturaID`;
 
         // Declaramos el parámetro FacturaID
         const request = new sql.Request();
-        request.input('FacturaID', sql.Int, FacturaID);
+        request.input('FacturaID', sql.Int, facturaIDInt); // Usamos la versión convertida a número entero
 
-        // Ejecutamos la consulta usando los parámetros
+        // Ejecutamos la consulta
         const result = await request.query(query);
 
         if (result.recordset.length === 0) {
@@ -55,12 +103,29 @@ const obtenerFacturaPorID = async (req, res) => {
 // Subir una nueva factura
 const subirFactura = async (req, res) => {
     try {
-        const { ClienteID, Fecha, Total, MetodoPago, Estatus, NumeroFactura, RFCEmisor, EnlacePDF } = req.body;
+        const { ClienteID } = req.body;  // Puedes seguir utilizando req.body para el ClienteID
+        const xmlFile = req.file; // Esto accede al archivo XML subido
 
-        const query = `INSERT INTO Facturas (ClienteID, Fecha, Total, MetodoPago, Estatus, NumeroFactura, RFCEmisor, EnlacePDF) 
-                       VALUES (@ClienteID, @Fecha, @Total, @MetodoPago, @Estatus, @NumeroFactura, @RFCEmisor, @EnlacePDF)`;
+        if (!xmlFile) {
+            return res.status(400).json({ error: "No se ha subido un archivo XML" });
+        }
 
-        // Declaramos los parámetros
+        const rutaXML = xmlFile.path;
+        const datosXML = procesarXML(rutaXML); // Usar la función procesarXML para obtener los datos del XML
+
+        // Extraemos el valor del Total desde el XML
+        const Total = datosXML['cfdi:Comprobante'].Total;
+
+        if (!Total) {
+            return res.status(400).json({ error: "El valor de 'Total' es necesario" });
+        }
+
+        // Extraemos otros detalles del XML, si es necesario
+        const { Fecha, MetodoPago, Estatus, NumeroFactura, RFCEmisor } = req.body;
+
+        const query = `INSERT INTO Facturas (ClienteID, Fecha, Total, MetodoPago, Estatus, NumeroFactura, RFCEmisor, EnlaceXML) 
+                       VALUES (@ClienteID, @Fecha, @Total, @MetodoPago, @Estatus, @NumeroFactura, @RFCEmisor, @EnlaceXML)`;
+
         const request = new sql.Request();
         request.input('ClienteID', sql.Int, ClienteID);
         request.input('Fecha', sql.Date, Fecha);
@@ -69,9 +134,8 @@ const subirFactura = async (req, res) => {
         request.input('Estatus', sql.NVarChar, Estatus);
         request.input('NumeroFactura', sql.NVarChar, NumeroFactura);
         request.input('RFCEmisor', sql.NVarChar, RFCEmisor);
-        request.input('EnlacePDF', sql.NVarChar, EnlacePDF);
+        request.input('EnlaceXML', sql.NVarChar, rutaXML); // Guarda la ruta del archivo XML
 
-        // Ejecutamos la consulta
         await request.query(query);
 
         res.status(201).json({ mensaje: "Factura registrada exitosamente" });
@@ -146,6 +210,7 @@ module.exports = {
     obtenerFacturasPorCliente,
     obtenerFacturaPorID,
     subirFactura,
+    upload,
     actualizarFactura,
     eliminarFactura,
 };

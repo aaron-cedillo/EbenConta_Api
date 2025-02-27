@@ -22,6 +22,7 @@
     "https": "^1.0.0",
     "jsonwebtoken": "^9.0.2",
     "mssql": "^11.0.1",
+    "multer": "^1.4.5-lts.1",
     "mysql2": "^3.12.0",
     "strong-soap": "^4.1.8",
     "xml2js": "^0.6.2"
