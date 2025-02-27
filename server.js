@@ -10,6 +10,7 @@ const userRoutes = require('./routes/userRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const contadorRoutes = require('./routes/contadorRoutes');
 const clienteRoutes = require('./routes/clienteRoutes');
+const clienteDashboardRoutes = require('./routes/clienteDashboardRoutes');
 
 // Middleware
 app.use(express.json());
@@ -30,7 +31,8 @@ app.get('/', (req, res) => {
 app.use('/api/users', userRoutes); // Rutas de usuarios con prefijo '/api/users'
 app.use('/api/admin', adminRoutes); // Rutas de administración con prefijo '/api/admin'
 app.use('/api/contador', contadorRoutes); // Rutas de contadores con prefijo '/api/contador'
-app.use('/api/clientes', clienteRoutes); // Agregar rutas de clientes
+app.use('/api/clientes', clienteRoutes); // Rutas de clientes
+app.use('/api', clienteDashboardRoutes);  // Rutas de ClienteDashboard
 
 // Iniciar el servidor
 app.listen(port, () => {
