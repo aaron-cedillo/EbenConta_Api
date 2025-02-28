@@ -1,46 +1,22 @@
-const { sql } = require("../config/db");  // Usamos sql desde la configuración de la base de datos
+const { sql } = require("../config/db"); 
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
-const xml2js = require('xml2js');
+const xml2js = require("xml2js");
 
-const procesarXML = (rutaArchivo) => {
-    const xml = fs.readFileSync(rutaArchivo, 'utf-8');  // Lee el archivo XML
-    let jsonData = null;
+// Configuración de multer para almacenar archivos en memoria
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
-    xml2js.parseString(xml, { explicitArray: false }, (err, result) => {
-        if (err) throw new Error("Error al procesar el XML");
-        jsonData = result;
-    });
-
-    return jsonData;
-};
-
-// Configuración de multer para guardar los archivos en "uploads/xml"
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, "../uploads/xml");
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true }); // Crea la carpeta si no existe
-        }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname)); // Renombra el archivo
-    },
-});
-
-// Filtro para aceptar solo archivos XML
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype === "text/xml" || file.mimetype === "application/xml") {
-        cb(null, true);
-    } else {
-        cb(new Error("Solo se permiten archivos XML"), false);
+// Función para procesar el XML en memoria
+const procesarXML = async (xmlBuffer) => {
+    try {
+        const xml = xmlBuffer.toString("utf-8"); // Convertir el buffer a string
+        const parser = new xml2js.Parser({ explicitArray: false });
+        const result = await parser.parseStringPromise(xml);
+        return result;
+    } catch (error) {
+        throw new Error("Error al procesar el XML");
     }
 };
-
-// Middleware de subida de archivos
-const upload = multer({ storage, fileFilter });
 
 // Obtener todas las facturas de un cliente, con opción de filtrar por fecha
 const obtenerFacturasPorCliente = async (req, res) => {
@@ -49,20 +25,18 @@ const obtenerFacturasPorCliente = async (req, res) => {
         const { fechaInicio, fechaFin } = req.query;
 
         let query = `SELECT * FROM Facturas WHERE ClienteID = @ClienteID`;
-        
-        // Declaramos el parámetro ClienteID
+
         const request = new sql.Request();
-        request.input('ClienteID', sql.Int, ClienteID);
+        request.input("ClienteID", sql.Int, ClienteID);
 
         if (fechaInicio && fechaFin) {
             query += ` AND Fecha BETWEEN @fechaInicio AND @fechaFin`;
-            request.input('fechaInicio', sql.Date, fechaInicio);
-            request.input('fechaFin', sql.Date, fechaFin);
+            request.input("fechaInicio", sql.Date, fechaInicio);
+            request.input("fechaFin", sql.Date, fechaFin);
         }
 
-        // Ejecutamos la consulta usando los parámetros
         const result = await request.query(query);
-        res.json(result.recordset);  // Asegúrate de usar recordset con SQL Server
+        res.json(result.recordset);
     } catch (error) {
         console.error("Error al obtener facturas:", error);
         res.status(500).json({ error: "Error al obtener facturas" });
@@ -74,7 +48,6 @@ const obtenerFacturaPorID = async (req, res) => {
     try {
         const { FacturaID } = req.params;
 
-        // Validar que FacturaID sea un número válido
         const facturaIDInt = parseInt(FacturaID, 10);
         if (isNaN(facturaIDInt)) {
             return res.status(400).json({ error: "FacturaID debe ser un número válido" });
@@ -82,11 +55,9 @@ const obtenerFacturaPorID = async (req, res) => {
 
         const query = `SELECT * FROM Facturas WHERE FacturaID = @FacturaID`;
 
-        // Declaramos el parámetro FacturaID
         const request = new sql.Request();
-        request.input('FacturaID', sql.Int, facturaIDInt); // Usamos la versión convertida a número entero
+        request.input("FacturaID", sql.Int, facturaIDInt);
 
-        // Ejecutamos la consulta
         const result = await request.query(query);
 
         if (result.recordset.length === 0) {
@@ -100,41 +71,67 @@ const obtenerFacturaPorID = async (req, res) => {
     }
 };
 
-// Subir una nueva factura
+// Subir una nueva factura sin guardarla en una carpeta
 const subirFactura = async (req, res) => {
     try {
-        const { ClienteID } = req.body;  // Puedes seguir utilizando req.body para el ClienteID
-        const xmlFile = req.file; // Esto accede al archivo XML subido
+        console.log("REQ.BODY:", req.body);
+        console.log("REQ.FILE:", req.file);
+
+        const { ClienteID } = req.body;
+        const xmlFile = req.file;
+
+        if (!ClienteID) {
+            return res.status(400).json({ error: "ClienteID es requerido" });
+        }
 
         if (!xmlFile) {
             return res.status(400).json({ error: "No se ha subido un archivo XML" });
         }
 
-        const rutaXML = xmlFile.path;
-        const datosXML = procesarXML(rutaXML); // Usar la función procesarXML para obtener los datos del XML
+        // Procesar el XML
+        const datosXML = await procesarXML(xmlFile.buffer);
+        console.log("DATOS DEL XML:", datosXML);
 
-        // Extraemos el valor del Total desde el XML
-        const Total = datosXML['cfdi:Comprobante'].Total;
+        // Extraer valores necesarios
+        const Total = datosXML["cfdi:Comprobante"]?.["$"]?.["Total"];
+        const SubTotal = datosXML["cfdi:Comprobante"]?.["$"]?.["SubTotal"];
+        const RFCReceptor = datosXML["cfdi:Comprobante"]?.["cfdi:Receptor"]?.["$"]?.["Rfc"];
+        const UUID = datosXML["cfdi:Comprobante"]?.["cfdi:Complemento"]?.["tfd:TimbreFiscalDigital"]?.["$"]?.["UUID"];
+        const FechaEmision = datosXML["cfdi:Comprobante"]?.["$"]?.["Fecha"];
 
         if (!Total) {
-            return res.status(400).json({ error: "El valor de 'Total' es necesario" });
+            return res.status(400).json({ error: "El valor de 'Total' es necesario en el XML" });
         }
 
-        // Extraemos otros detalles del XML, si es necesario
-        const { Fecha, MetodoPago, Estatus, NumeroFactura, RFCEmisor } = req.body;
+        if (!SubTotal) {
+            // Si no se encuentra SubTotal, podemos asignar un valor predeterminado
+            console.warn("El valor de 'SubTotal' no está presente en el XML, se asignará el valor 0.00");
+            SubTotal = 0.00;  // Valor predeterminado
+        }
 
-        const query = `INSERT INTO Facturas (ClienteID, Fecha, Total, MetodoPago, Estatus, NumeroFactura, RFCEmisor, EnlaceXML) 
-                       VALUES (@ClienteID, @Fecha, @Total, @MetodoPago, @Estatus, @NumeroFactura, @RFCEmisor, @EnlaceXML)`;
+        if (!RFCReceptor) {
+            return res.status(400).json({ error: "El RFC del receptor es necesario en el XML" });
+        }
+
+        if (!UUID) {
+            return res.status(400).json({ error: "El UUID es necesario en el XML" });
+        }
+
+        if (!FechaEmision) {
+            return res.status(400).json({ error: "La Fecha de Emisión es necesaria en el XML" });
+        }
+
+        // Insertar en la base de datos
+        const query = `INSERT INTO Facturas (ClienteID, Fecha, Total, Subtotal, RFCReceptor, MetodoPago, Estatus, NumeroFactura, RFCEmisor, UUID, FechaEmision) 
+                        VALUES (@ClienteID, GETDATE(), @Total, @SubTotal, @RFCReceptor, 'Desconocido', 'Pendiente', 'N/A', 'N/A', @UUID, @FechaEmision)`;
 
         const request = new sql.Request();
-        request.input('ClienteID', sql.Int, ClienteID);
-        request.input('Fecha', sql.Date, Fecha);
-        request.input('Total', sql.Decimal, Total);
-        request.input('MetodoPago', sql.NVarChar, MetodoPago);
-        request.input('Estatus', sql.NVarChar, Estatus);
-        request.input('NumeroFactura', sql.NVarChar, NumeroFactura);
-        request.input('RFCEmisor', sql.NVarChar, RFCEmisor);
-        request.input('EnlaceXML', sql.NVarChar, rutaXML); // Guarda la ruta del archivo XML
+        request.input("ClienteID", sql.Int, ClienteID);
+        request.input("Total", sql.Decimal, Total);
+        request.input("SubTotal", sql.Decimal, SubTotal);
+        request.input("RFCReceptor", sql.VarChar, RFCReceptor);
+        request.input("UUID", sql.VarChar, UUID);
+        request.input("FechaEmision", sql.DateTime, FechaEmision);
 
         await request.query(query);
 
@@ -144,6 +141,7 @@ const subirFactura = async (req, res) => {
         res.status(500).json({ error: "Error al registrar la factura" });
     }
 };
+
 
 // Actualizar una factura
 const actualizarFactura = async (req, res) => {
@@ -156,18 +154,16 @@ const actualizarFactura = async (req, res) => {
                            NumeroFactura = @NumeroFactura, RFCEmisor = @RFCEmisor, EnlacePDF = @EnlacePDF
                        WHERE FacturaID = @FacturaID`;
 
-        // Declaramos los parámetros
         const request = new sql.Request();
-        request.input('Fecha', sql.Date, Fecha);
-        request.input('Total', sql.Decimal, Total);
-        request.input('MetodoPago', sql.NVarChar, MetodoPago);
-        request.input('Estatus', sql.NVarChar, Estatus);
-        request.input('NumeroFactura', sql.NVarChar, NumeroFactura);
-        request.input('RFCEmisor', sql.NVarChar, RFCEmisor);
-        request.input('EnlacePDF', sql.NVarChar, EnlacePDF);
-        request.input('FacturaID', sql.Int, FacturaID);
+        request.input("Fecha", sql.Date, Fecha);
+        request.input("Total", sql.Decimal, Total);
+        request.input("MetodoPago", sql.NVarChar, MetodoPago);
+        request.input("Estatus", sql.NVarChar, Estatus);
+        request.input("NumeroFactura", sql.NVarChar, NumeroFactura);
+        request.input("RFCEmisor", sql.NVarChar, RFCEmisor);
+        request.input("EnlacePDF", sql.NVarChar, EnlacePDF);
+        request.input("FacturaID", sql.Int, FacturaID);
 
-        // Ejecutamos la consulta
         const result = await request.query(query);
 
         if (result.rowsAffected === 0) {
@@ -188,11 +184,9 @@ const eliminarFactura = async (req, res) => {
 
         const query = `DELETE FROM Facturas WHERE FacturaID = @FacturaID`;
 
-        // Declaramos el parámetro
         const request = new sql.Request();
-        request.input('FacturaID', sql.Int, FacturaID);
+        request.input("FacturaID", sql.Int, FacturaID);
 
-        // Ejecutamos la consulta
         const result = await request.query(query);
 
         if (result.rowsAffected === 0) {
