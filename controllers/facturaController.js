@@ -1,4 +1,4 @@
-const { sql } = require("../config/db"); 
+const { sql } = require("../config/db");
 const multer = require("multer");
 const xml2js = require("xml2js");
 
@@ -151,21 +151,24 @@ const subirFactura = async (req, res) => {
 const actualizarFactura = async (req, res) => {
     try {
         const { FacturaID } = req.params;
-        const { Fecha, Total, MetodoPago, Estatus, NumeroFactura, RFCEmisor, EnlacePDF } = req.body;
+        const { Estatus } = req.body;
 
+        console.log("FacturaID recibido:", FacturaID);  // Verificar el FacturaID
+        console.log("Estatus recibido:", Estatus);     // Verificar el Estatus
+
+        // Validar si el estatus es válido
+        const estatusPermitidos = ['Pendiente', 'Cancelado', 'Activa'];
+        if (!estatusPermitidos.includes(Estatus)) {
+            return res.status(400).json({ error: "Estatus no válido. Los estatus permitidos son: 'Pendiente', 'Pagado', 'Cancelado', 'Activa'" });
+        }
+
+        // Consulta para actualizar solo el estatus
         const query = `UPDATE Facturas 
-                       SET Fecha = @Fecha, Total = @Total, MetodoPago = @MetodoPago, Estatus = @Estatus, 
-                           NumeroFactura = @NumeroFactura, RFCEmisor = @RFCEmisor, EnlacePDF = @EnlacePDF
-                       WHERE FacturaID = @FacturaID`;
+                     SET Estatus = @Estatus
+                     WHERE FacturaID = @FacturaID`;
 
         const request = new sql.Request();
-        request.input("Fecha", sql.Date, Fecha);
-        request.input("Total", sql.Decimal, Total);
-        request.input("MetodoPago", sql.NVarChar, MetodoPago);
         request.input("Estatus", sql.NVarChar, Estatus);
-        request.input("NumeroFactura", sql.NVarChar, NumeroFactura);
-        request.input("RFCEmisor", sql.NVarChar, RFCEmisor);
-        request.input("EnlacePDF", sql.NVarChar, EnlacePDF);
         request.input("FacturaID", sql.Int, FacturaID);
 
         const result = await request.query(query);
@@ -174,10 +177,10 @@ const actualizarFactura = async (req, res) => {
             return res.status(404).json({ error: "Factura no encontrada" });
         }
 
-        res.json({ mensaje: "Factura actualizada exitosamente" });
+        res.json({ mensaje: "Estatus de la factura actualizado exitosamente" });
     } catch (error) {
-        console.error("Error al actualizar la factura:", error);
-        res.status(500).json({ error: "Error al actualizar la factura" });
+        console.error("Error al actualizar el estatus de la factura:", error);
+        res.status(500).json({ error: "Error al actualizar el estatus de la factura" });
     }
 };
 

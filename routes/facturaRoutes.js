@@ -7,7 +7,7 @@ router.get("/cliente/:ClienteID", facturaController.obtenerFacturasPorCliente);
 router.get("/:FacturaID", facturaController.obtenerFacturaPorID);
 // Ruta para subir una factura con XML
 router.post("/subir", facturaController.upload.single("xml"), facturaController.subirFactura);
-router.put("/:FacturaID", facturaController.actualizarFactura);
+router.put('/facturas/:FacturaID', facturaController.actualizarFactura);
 router.delete("/:FacturaID", facturaController.eliminarFactura);
 
 module.exports = router;
