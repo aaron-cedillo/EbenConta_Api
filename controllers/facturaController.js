@@ -156,10 +156,15 @@ const actualizarFactura = async (req, res) => {
         console.log("FacturaID recibido:", FacturaID);  // Verificar el FacturaID
         console.log("Estatus recibido:", Estatus);     // Verificar el Estatus
 
+        // Validar si FacturaID es un número
+        if (isNaN(FacturaID)) {
+            return res.status(400).json({ error: "FacturaID debe ser un número válido" });
+        }
+
         // Validar si el estatus es válido
         const estatusPermitidos = ['Pendiente', 'Cancelado', 'Activa'];
         if (!estatusPermitidos.includes(Estatus)) {
-            return res.status(400).json({ error: "Estatus no válido. Los estatus permitidos son: 'Pendiente', 'Pagado', 'Cancelado', 'Activa'" });
+            return res.status(400).json({ error: "Estatus no válido. Los estatus permitidos son: 'Pendiente', 'Cancelado', 'Activa'" });
         }
 
         // Consulta para actualizar solo el estatus
@@ -177,7 +182,7 @@ const actualizarFactura = async (req, res) => {
             return res.status(404).json({ error: "Factura no encontrada" });
         }
 
-        res.json({ mensaje: "Estatus de la factura actualizado exitosamente" });
+        res.json({ mensaje: `Estatus de la factura ${FacturaID} actualizado exitosamente` });
     } catch (error) {
         console.error("Error al actualizar el estatus de la factura:", error);
         res.status(500).json({ error: "Error al actualizar el estatus de la factura" });
