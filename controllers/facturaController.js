@@ -93,20 +93,20 @@ const subirFactura = async (req, res) => {
         console.log("DATOS DEL XML:", datosXML);
 
         // Extraer valores necesarios
-        const Total = datosXML["cfdi:Comprobante"]?.["$"]?.["Total"];
-        const SubTotal = datosXML["cfdi:Comprobante"]?.["$"]?.["SubTotal"];
+        const comprobante = datosXML["cfdi:Comprobante"];
+        if (!comprobante || !comprobante["$"]) {
+            return res.status(400).json({ error: "El XML no contiene un Comprobante válido." });
+        }
+
+        const Total = comprobante["$"].Total;
+        let SubTotal = comprobante["$"].SubTotal || 0.00;
         const RFCReceptor = datosXML["cfdi:Comprobante"]?.["cfdi:Receptor"]?.["$"]?.["Rfc"];
         const UUID = datosXML["cfdi:Comprobante"]?.["cfdi:Complemento"]?.["tfd:TimbreFiscalDigital"]?.["$"]?.["UUID"];
-        const FechaEmision = datosXML["cfdi:Comprobante"]?.["$"]?.["Fecha"];
+        const FechaEmision = comprobante["$"].Fecha;
+        const Tipo = comprobante["$"].TipoDeComprobante; // "I" para Ingreso, "E" para Egreso
 
         if (!Total) {
             return res.status(400).json({ error: "El valor de 'Total' es necesario en el XML" });
-        }
-
-        if (!SubTotal) {
-            // Si no se encuentra SubTotal, podemos asignar un valor predeterminado
-            console.warn("El valor de 'SubTotal' no está presente en el XML, se asignará el valor 0.00");
-            SubTotal = 0.00;  // Valor predeterminado
         }
 
         if (!RFCReceptor) {
@@ -121,9 +121,13 @@ const subirFactura = async (req, res) => {
             return res.status(400).json({ error: "La Fecha de Emisión es necesaria en el XML" });
         }
 
-        // Insertar en la base de datos
-        const query = `INSERT INTO Facturas (ClienteID, Fecha, Total, Subtotal, RFCReceptor, MetodoPago, Estatus, NumeroFactura, RFCEmisor, UUID, FechaEmision) 
-                        VALUES (@ClienteID, GETDATE(), @Total, @SubTotal, @RFCReceptor, 'Desconocido', 'Pendiente', 'N/A', 'N/A', @UUID, @FechaEmision)`;
+        if (!Tipo) {
+            return res.status(400).json({ error: "El Tipo de Comprobante es necesario en el XML" });
+        }
+
+        // Insertar en la base de datos con el Tipo de Comprobante
+        const query = `INSERT INTO Facturas (ClienteID, Fecha, Total, Subtotal, RFCReceptor, MetodoPago, Estatus, NumeroFactura, RFCEmisor, UUID, FechaEmision, Tipo) 
+                        VALUES (@ClienteID, GETDATE(), @Total, @SubTotal, @RFCReceptor, 'Desconocido', 'Pendiente', 'N/A', 'N/A', @UUID, @FechaEmision, @Tipo)`;
 
         const request = new sql.Request();
         request.input("ClienteID", sql.Int, ClienteID);
@@ -132,16 +136,16 @@ const subirFactura = async (req, res) => {
         request.input("RFCReceptor", sql.VarChar, RFCReceptor);
         request.input("UUID", sql.VarChar, UUID);
         request.input("FechaEmision", sql.DateTime, FechaEmision);
+        request.input("Tipo", sql.VarChar, Tipo); // "I" o "E"
 
         await request.query(query);
 
-        res.status(201).json({ mensaje: "Factura registrada exitosamente" });
+        res.status(201).json({ mensaje: "Factura registrada exitosamente", Tipo });
     } catch (error) {
         console.error("Error al subir la factura:", error);
         res.status(500).json({ error: "Error al registrar la factura" });
     }
 };
-
 
 // Actualizar una factura
 const actualizarFactura = async (req, res) => {
