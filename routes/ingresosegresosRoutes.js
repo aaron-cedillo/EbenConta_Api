@@ -5,6 +5,7 @@ const authenticateJWT = require('../middlewares/authenticateJWT');
 const ingresosegresosController = require("../controllers/ingresosegresosController");
 
 // Ruta para obtener el resumen de las facturas de un cliente
-router.get("/cliente/:ClienteID/resumen", authenticateJWT, ingresosegresosController.obtenerResumenFacturasPorCliente);
+router.get("/cliente/:ClienteID",authenticateJWT, ingresosegresosController.obtenerFacturasPorCliente);
+router.get("/:FacturaID",authenticateJWT, ingresosegresosController.obtenerFacturaPorID);
 
 module.exports = router;
