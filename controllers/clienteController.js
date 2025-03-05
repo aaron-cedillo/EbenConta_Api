@@ -1,6 +1,6 @@
 const { sql } = require('../config/db');
 
-// Obtener todos los clientes del usuario autenticado
+/*/ Obtener todos los clientes del usuario autenticado
 exports.getClientes = async (req, res) => {
   const userId = req.user.id;  // El `id` del usuario viene del token JWT
 
@@ -10,6 +10,23 @@ exports.getClientes = async (req, res) => {
       SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID
       FROM Clientes
       WHERE UsuarioID = ${userId}
+    `;
+    res.status(200).json(result.recordset);
+  } catch (error) {
+    console.error("Error al obtener los clientes:", error);
+    res.status(500).json({ message: "Error al obtener los clientes", error: error.message });
+  }
+};*/
+
+exports.getClientes = async (req, res) => {
+  const userId = req.user.id; // ID del usuario autenticado
+
+  try {
+    // Filtramos solo los clientes NO archivados
+    const result = await sql.query`
+      SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID
+      FROM Clientes
+      WHERE UsuarioID = ${userId} AND Archivado = 0
     `;
     res.status(200).json(result.recordset);
   } catch (error) {
@@ -118,7 +135,7 @@ exports.updateCliente = async (req, res) => {
   }
 };
 
-// Eliminar un cliente
+/*/ Eliminar un cliente
 exports.deleteCliente = async (req, res) => {
   const { id } = req.params;
   const usuarioId = req.user.id;  // Usamos el `UsuarioID` del usuario autenticado
@@ -148,4 +165,38 @@ exports.deleteCliente = async (req, res) => {
     console.error("Error al eliminar cliente:", error);
     res.status(500).json({ message: "Error al eliminar cliente", error: error.message });
   }
+};*/
+
+// Archivar un cliente (sin eliminarlo)
+exports.archivarCliente = async (req, res) => {
+  const { id } = req.params;
+  const usuarioId = req.user.id; // Usuario autenticado
+
+  try {
+    // Verificar si el cliente pertenece al usuario autenticado
+    const cliente = await sql.query`
+      SELECT UsuarioID FROM Clientes WHERE ClienteID = ${id}
+    `;
+
+    if (cliente.recordset.length === 0) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    if (cliente.recordset[0].UsuarioID !== usuarioId) {
+      return res.status(403).json({ message: "No tienes permiso para archivar este cliente" });
+    }
+
+    // Marcar el cliente como archivado
+    await sql.query`
+      UPDATE Clientes
+      SET Archivado = 1
+      WHERE ClienteID = ${id}
+    `;
+
+    res.status(200).json({ message: "Cliente archivado correctamente" });
+  } catch (error) {
+    console.error("Error al archivar cliente:", error);
+    res.status(500).json({ message: "Error al archivar cliente", error: error.message });
+  }
 };
+
