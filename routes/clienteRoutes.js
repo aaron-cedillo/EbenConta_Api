@@ -17,4 +17,10 @@ router.delete('/:id', authenticateJWT, clienteController.deleteCliente);*/
 
 router.put("/archivar/:id", authenticateJWT, clienteController.archivarCliente);
 
+// Obtener clientes archivados
+router.get('/archivados', authenticateJWT, clienteController.getClientesArchivados);
+
+// Restaurar un cliente archivado
+router.put('/restaurar/:id', authenticateJWT, clienteController.restaurarCliente);
+
 module.exports = router;

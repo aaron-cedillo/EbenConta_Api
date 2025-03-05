@@ -18,6 +18,50 @@ exports.getClientes = async (req, res) => {
   }
 };*/
 
+exports.getClientesArchivados = async (req, res) => {
+  const usuarioId = req.user.id;
+
+  try {
+    const result = await sql.query`
+      SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID
+      FROM Clientes
+      WHERE UsuarioID = ${usuarioId} AND Archivado = 1
+    `;
+    res.status(200).json(result.recordset);
+  } catch (error) {
+    console.error("Error al obtener clientes archivados:", error);
+    res.status(500).json({ message: "Error al obtener clientes archivados", error: error.message });
+  }
+};
+
+exports.restaurarCliente = async (req, res) => {
+  const { id } = req.params;
+  const usuarioId = req.user.id;
+
+  try {
+    const cliente = await sql.query`
+      SELECT UsuarioID FROM Clientes WHERE ClienteID = ${id}
+    `;
+
+    if (cliente.recordset.length === 0) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    if (cliente.recordset[0].UsuarioID !== usuarioId) {
+      return res.status(403).json({ message: "No tienes permiso para restaurar este cliente" });
+    }
+
+    await sql.query`
+      UPDATE Clientes SET Archivado = 0 WHERE ClienteID = ${id}
+    `;
+
+    res.status(200).json({ message: "Cliente restaurado correctamente" });
+  } catch (error) {
+    console.error("Error al restaurar cliente:", error);
+    res.status(500).json({ message: "Error al restaurar cliente", error: error.message });
+  }
+};
+
 exports.getClientes = async (req, res) => {
   const userId = req.user.id; // ID del usuario autenticado
 
