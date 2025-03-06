@@ -18,6 +18,25 @@ exports.getClientes = async (req, res) => {
   }
 };*/
 
+exports.getClientePorID = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await sql.query`
+      SELECT Nombre FROM Clientes WHERE ClienteID = ${id}
+    `;
+
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+
+    res.status(200).json(result.recordset[0]); // Devuelve solo el nombre del cliente
+  } catch (error) {
+    console.error("Error al obtener el cliente:", error);
+    res.status(500).json({ message: "Error al obtener el cliente", error: error.message });
+  }
+};
+
 exports.getClientesArchivados = async (req, res) => {
   const usuarioId = req.user.id;
 

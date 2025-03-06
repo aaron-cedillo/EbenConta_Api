@@ -23,4 +23,7 @@ router.get('/archivados', authenticateJWT, clienteController.getClientesArchivad
 // Restaurar un cliente archivado
 router.put('/restaurar/:id', authenticateJWT, clienteController.restaurarCliente);
 
+// Obtener el nombre de un cliente por su ID
+router.get('/:id', authenticateJWT, clienteController.getClientePorID);
+
 module.exports = router;
