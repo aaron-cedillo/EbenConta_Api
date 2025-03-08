@@ -162,9 +162,9 @@ const actualizarFactura = async (req, res) => {
         }
 
         // Validar si el estatus es válido
-        const estatusPermitidos = ['Pendiente', 'Cancelado', 'Activa'];
+        const estatusPermitidos = ['Pendiente', 'Cancelada', 'Activa'];
         if (!estatusPermitidos.includes(Estatus)) {
-            return res.status(400).json({ error: "Estatus no válido. Los estatus permitidos son: 'Pendiente', 'Cancelado', 'Activa'" });
+            return res.status(400).json({ error: "Estatus no válido. Los estatus permitidos son: 'Pendiente', 'Cancelada', 'Activa'" });
         }
 
         // Consulta para actualizar solo el estatus
