@@ -14,6 +14,7 @@ const clienteDashboardRoutes = require('./routes/clienteDashboardRoutes');
 const facturaRoutes = require("./routes/facturaRoutes");
 const ingresosegresosRoutes = require("./routes/ingresosegresosRoutes");
 const alertasRoutes = require("./routes/alertasRoutes");
+const contadorEstadisticasRoutes = require("./routes/contadorEstadisticasRoutes");
 
 // Middleware
 app.use(express.json());
@@ -39,6 +40,7 @@ app.use('/api', clienteDashboardRoutes);  // Rutas de ClienteDashboard
 app.use("/api/facturas", facturaRoutes);  // Rutas de facturas
 app.use("/api/facturas", ingresosegresosRoutes);  // Rutas de resumen de facturas
 app.use("/api/alertas", alertasRoutes); // Rutas de alertas
+app.use("/api/estadisticas", contadorEstadisticasRoutes); // Rutas de estadísticas
 
 // Iniciar el servidor
 app.listen(port, () => {
