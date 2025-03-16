@@ -12,8 +12,8 @@ router.post('/', authenticateJWT, clienteController.addCliente);
 // Editar un cliente
 router.put('/:id', authenticateJWT, clienteController.updateCliente);
 
-/*/ Eliminar un cliente
-router.delete('/:id', authenticateJWT, clienteController.deleteCliente);*/
+// Eliminar un cliente
+router.delete('/:id', authenticateJWT, clienteController.deleteCliente);
 
 router.put("/archivar/:id", authenticateJWT, clienteController.archivarCliente);
 

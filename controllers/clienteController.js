@@ -198,17 +198,17 @@ exports.updateCliente = async (req, res) => {
   }
 };
 
-/*/ Eliminar un cliente
+// Eliminar un cliente
 exports.deleteCliente = async (req, res) => {
-  const { id } = req.params;
-  const usuarioId = req.user.id;  // Usamos el `UsuarioID` del usuario autenticado
-
   try {
-    // Verificamos si el cliente pertenece al usuario autenticado
+    const { id } = req.params;
+    const usuarioId = req.user.id;  // Usuario autenticado
+
+    // Verificar si el cliente existe y pertenece al usuario autenticado
     const cliente = await sql.query`
-      SELECT UsuarioID FROM Clientes WHERE ClienteID = ${id}
+      SELECT * FROM Clientes WHERE ClienteID = ${id}
     `;
-    
+
     if (cliente.recordset.length === 0) {
       return res.status(404).json({ message: "Cliente no encontrado" });
     }
@@ -217,18 +217,18 @@ exports.deleteCliente = async (req, res) => {
       return res.status(403).json({ message: "No tienes permiso para eliminar este cliente" });
     }
 
-    const result = await sql.query`
+    // Eliminar el cliente
+    await sql.query`
       DELETE FROM Clientes WHERE ClienteID = ${id}
     `;
-    if (result.rowsAffected[0] === 0) {
-      return res.status(404).json({ message: "Cliente no encontrado" });
-    }
+
     res.status(200).json({ message: "Cliente eliminado correctamente" });
   } catch (error) {
     console.error("Error al eliminar cliente:", error);
     res.status(500).json({ message: "Error al eliminar cliente", error: error.message });
   }
-};*/
+};
+
 
 // Archivar un cliente (sin eliminarlo)
 exports.archivarCliente = async (req, res) => {
