@@ -1,6 +1,6 @@
 const express = require('express');
 const { loginUser, getUsers } = require('../controllers/userController');
-const { sql, connectDB } = require('../config/db'); // 🔹 Agregado para la conexión a la BD
+const { sql, connectDB } = require('../config/db'); 
 const router = express.Router();
 
 // Ruta para registrar un contador

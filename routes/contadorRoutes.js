@@ -1,4 +1,3 @@
-// API/routes/contadorRoutes.js
 const express = require('express');
 const router = express.Router();
 const { getContadorProfile, updateContador, changeContadorPassword } = require('../controllers/contadorController');
