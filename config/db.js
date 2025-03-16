@@ -11,15 +11,13 @@ const config = {
   },
 };
 
-// Conectar a la base de datos
 const connectDB = async () => {
   try {
-    await sql.connect(config);  // Establece la conexión con la base de datos
+    await sql.connect(config);  
     console.log('Conexión exitosa a la base de datos');
   } catch (err) {
     console.error('Error de conexión: ', err);
   }
 };
 
-// Exporta el objeto sql y la función connectDB
 module.exports = { sql, connectDB };

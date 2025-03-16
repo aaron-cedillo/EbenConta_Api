@@ -1,23 +1,5 @@
 const { sql } = require('../config/db');
 
-/*/ Obtener todos los clientes del usuario autenticado
-exports.getClientes = async (req, res) => {
-  const userId = req.user.id;  // El `id` del usuario viene del token JWT
-
-  try {
-    // Filtramos los clientes por el `UsuarioID` del usuario autenticado
-    const result = await sql.query`
-      SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID
-      FROM Clientes
-      WHERE UsuarioID = ${userId}
-    `;
-    res.status(200).json(result.recordset);
-  } catch (error) {
-    console.error("Error al obtener los clientes:", error);
-    res.status(500).json({ message: "Error al obtener los clientes", error: error.message });
-  }
-};*/
-
 exports.getClientePorID = async (req, res) => {
   const { id } = req.params;
 
@@ -30,7 +12,7 @@ exports.getClientePorID = async (req, res) => {
       return res.status(404).json({ message: "Cliente no encontrado" });
     }
 
-    res.status(200).json(result.recordset[0]); // Devuelve solo el nombre del cliente
+    res.status(200).json(result.recordset[0]); 
   } catch (error) {
     console.error("Error al obtener el cliente:", error);
     res.status(500).json({ message: "Error al obtener el cliente", error: error.message });
@@ -82,10 +64,9 @@ exports.restaurarCliente = async (req, res) => {
 };
 
 exports.getClientes = async (req, res) => {
-  const userId = req.user.id; // ID del usuario autenticado
+  const userId = req.user.id; 
 
   try {
-    // Filtramos solo los clientes NO archivados
     const result = await sql.query`
       SELECT ClienteID, Nombre, RFC, Correo, Telefono, Direccion, UsuarioID
       FROM Clientes
@@ -101,15 +82,13 @@ exports.getClientes = async (req, res) => {
 // Agregar un nuevo cliente
 exports.addCliente = async (req, res) => {
   const { nombre, rfc, correo, telefono, direccion } = req.body;
-  const usuarioId = req.user.id;  // Usamos el UsuarioID del usuario autenticado
+  const usuarioId = req.user.id;  
   
-  // Validación básica
   if (!nombre || !rfc || !correo || !telefono || !direccion) {
     return res.status(400).json({ message: "Todos los campos son obligatorios" });
   }
 
   try {
-    // Insertamos el cliente con el `UsuarioID` del usuario autenticado
     await sql.query`
       INSERT INTO Clientes (Nombre, RFC, Correo, Telefono, Direccion, UsuarioID) 
       VALUES (${nombre}, ${rfc}, ${correo}, ${telefono}, ${direccion}, ${usuarioId})
@@ -123,17 +102,15 @@ exports.addCliente = async (req, res) => {
 
 // Editar un cliente
 exports.updateCliente = async (req, res) => {
-  const { id } = req.params;  // Tomamos el id desde los parámetros de la URL
-  const { nombre, rfc, correo, telefono, direccion } = req.body;  // Tomamos los datos desde el body
-  const usuarioId = req.user.id;  // Usamos el `UsuarioID` del usuario autenticado
+  const { id } = req.params;  
+  const { nombre, rfc, correo, telefono, direccion } = req.body;  
+  const usuarioId = req.user.id;  
 
-  // Validamos que al menos uno de los campos sea proporcionado
   if (!nombre && !rfc && !correo && !telefono && !direccion) {
     return res.status(400).json({ message: "Debe proporcionar al menos un dato para actualizar" });
   }
 
   try {
-    // Verificamos si el cliente pertenece al usuario autenticado
     const cliente = await sql.query`
       SELECT UsuarioID FROM Clientes WHERE ClienteID = ${id}
     `;
@@ -170,12 +147,10 @@ exports.updateCliente = async (req, res) => {
       updateParams.push({ name: 'direccion', type: sql.NVarChar, value: direccion });
     }
 
-    // Si no se proporcionaron datos para actualizar
     if (updateQuery.endsWith('SET ')) {
       return res.status(400).json({ message: "No se proporcionaron datos para actualizar" });
     }
 
-    // Quitamos la coma final y completamos la cláusula WHERE
     updateQuery = updateQuery.slice(0, -2);
     updateQuery += ` WHERE ClienteID = @id`;
 
@@ -183,12 +158,10 @@ exports.updateCliente = async (req, res) => {
 
     const request = new sql.Request();
     
-    // Agregamos los parámetros
     updateParams.forEach(param => {
       request.input(param.name, param.type, param.value);
     });
 
-    // Ejecutamos la consulta con los parámetros
     await request.query(updateQuery);
 
     res.status(200).json({ message: 'Cliente actualizado correctamente' });
@@ -202,9 +175,8 @@ exports.updateCliente = async (req, res) => {
 exports.deleteCliente = async (req, res) => {
   try {
     const { id } = req.params;
-    const usuarioId = req.user.id;  // Usuario autenticado
+    const usuarioId = req.user.id;  
 
-    // Verificar si el cliente existe y pertenece al usuario autenticado
     const cliente = await sql.query`
       SELECT * FROM Clientes WHERE ClienteID = ${id}
     `;
@@ -217,7 +189,6 @@ exports.deleteCliente = async (req, res) => {
       return res.status(403).json({ message: "No tienes permiso para eliminar este cliente" });
     }
 
-    // Eliminar el cliente
     await sql.query`
       DELETE FROM Clientes WHERE ClienteID = ${id}
     `;
@@ -233,10 +204,9 @@ exports.deleteCliente = async (req, res) => {
 // Archivar un cliente (sin eliminarlo)
 exports.archivarCliente = async (req, res) => {
   const { id } = req.params;
-  const usuarioId = req.user.id; // Usuario autenticado
+  const usuarioId = req.user.id; 
 
   try {
-    // Verificar si el cliente pertenece al usuario autenticado
     const cliente = await sql.query`
       SELECT UsuarioID FROM Clientes WHERE ClienteID = ${id}
     `;
@@ -249,7 +219,6 @@ exports.archivarCliente = async (req, res) => {
       return res.status(403).json({ message: "No tienes permiso para archivar este cliente" });
     }
 
-    // Marcar el cliente como archivado
     await sql.query`
       UPDATE Clientes
       SET Archivado = 1

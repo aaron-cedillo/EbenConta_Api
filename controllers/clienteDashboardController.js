@@ -2,8 +2,8 @@ const { sql } = require('../config/db');
 
 // Obtener un solo cliente por su ClienteID
 exports.getClienteById = async (req, res) => {
-  const { id } = req.params;  // ID del cliente desde la URL
-  const usuarioId = req.user.id;  // ID del usuario autenticado desde el token
+  const { id } = req.params; 
+  const usuarioId = req.user.id;
 
   try {
     const result = await sql.query`

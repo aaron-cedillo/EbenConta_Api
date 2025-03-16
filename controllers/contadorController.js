@@ -27,7 +27,6 @@ const updateContador = async (req, res) => {
   const { contadorId } = req.params;
   const { nombre, correo, fechaExpiracion } = req.body;
 
-  // Validación de los datos
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -51,7 +50,7 @@ const updateContador = async (req, res) => {
   }
 };
 
-// Cambiar la contraseña del contador (en texto plano)
+// Cambiar la contraseña del contador
 const changeContadorPassword = async (req, res) => {
   const { contadorId } = req.params;
   const { nuevaContrasena } = req.body;

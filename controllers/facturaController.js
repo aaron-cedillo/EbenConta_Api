@@ -153,21 +153,18 @@ const actualizarFactura = async (req, res) => {
         const { FacturaID } = req.params;
         const { Estatus } = req.body;
 
-        console.log("FacturaID recibido:", FacturaID);  // Verificar el FacturaID
-        console.log("Estatus recibido:", Estatus);     // Verificar el Estatus
-
-        // Validar si FacturaID es un número
+        console.log("FacturaID recibido:", FacturaID);
+        console.log("Estatus recibido:", Estatus);    
+    
         if (isNaN(FacturaID)) {
             return res.status(400).json({ error: "FacturaID debe ser un número válido" });
         }
 
-        // Validar si el estatus es válido
         const estatusPermitidos = ['Pendiente', 'Cancelada', 'Activa'];
         if (!estatusPermitidos.includes(Estatus)) {
             return res.status(400).json({ error: "Estatus no válido. Los estatus permitidos son: 'Pendiente', 'Cancelada', 'Activa'" });
         }
 
-        // Consulta para actualizar solo el estatus
         const query = `UPDATE Facturas 
                      SET Estatus = @Estatus
                      WHERE FacturaID = @FacturaID`;

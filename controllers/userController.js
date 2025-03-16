@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 // Obtener todos los usuarios
 const getUsers = async (req, res) => {
   try {
-    await connectDB(); // Conectar a la base de datos
+    await connectDB(); 
     const result = await sql.query`SELECT * FROM Usuarios`;
     res.json(result.recordset);
   } catch (error) {
@@ -18,44 +18,39 @@ const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    await connectDB(); // Conectar a la base de datos
+    await connectDB(); 
 
-    // Buscar al usuario por correo
     const result = await sql.query`SELECT * FROM Usuarios WHERE Correo = ${email}`;
-    const user = result.recordset[0]; // Suponemos que solo hay un usuario con ese correo
+    const user = result.recordset[0]; 
 
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Comparar la contraseña en texto plano (sin hashing)
     if (user.Contrasena !== password) {
       return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
-    // Verificar si el usuario es un contador y si su acceso ha expirado
     if (user.Rol === 'contador') {
       const currentDate = new Date();
-      const expirationDate = new Date(user.FechaExpiracion); // Asegúrate de que la fecha de expiración está en el formato correcto
+      const expirationDate = new Date(user.FechaExpiracion); 
 
       if (currentDate > expirationDate) {
         return res.status(403).json({ message: 'El acceso de este contador ha expirado' });
       }
     }
 
-    // Generar el token JWT, incluyendo el nombre del usuario
     const token = jwt.sign(
       { 
         id: user.UsuarioID, 
         email: user.Correo, 
         rol: user.Rol,
-        nombre: user.Nombre // Suponiendo que el campo en la base de datos es "Nombre"
+        nombre: user.Nombre 
       },
-      process.env.JWT_SECRET, // Usamos la clave secreta desde las variables de entorno
-      { expiresIn: '1h' } // El token expira en 1 hora
+      process.env.JWT_SECRET, 
+      { expiresIn: '1h' } 
     );
 
-    // Retornar el token, rol y nombre del usuario
     return res.json({ token, rol: user.Rol, nombre: user.Nombre });
 
   } catch (error) {

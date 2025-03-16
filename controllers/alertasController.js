@@ -10,7 +10,6 @@ exports.crearAlerta = async (req, res) => {
     }
 
     try {
-        // Insertar la alerta en la tabla
         await sql.query`
       INSERT INTO Alertas (Tipo, FechaVencimiento, Estado, NombreClientes, UsuarioID)
       VALUES (${Tipo}, ${FechaVencimiento}, ${Estado}, ${NombreClientes}, ${usuarioId})
@@ -43,16 +42,15 @@ exports.obtenerAlertas = async (req, res) => {
 
 // Actualizar el estado de una alerta (Pendiente / Atendida)
 exports.actualizarEstadoAlerta = async (req, res) => {
-    const { id } = req.params;  // ID de la alerta
-    const { Estado } = req.body;  // Nuevo estado (Pendiente / Atendida)
-    const usuarioId = req.user.id;  // Usuario autenticado
+    const { id } = req.params;  
+    const { Estado } = req.body;  
+    const usuarioId = req.user.id;  
 
     if (!Estado) {
         return res.status(400).json({ error: 'El estado es obligatorio' });
     }
 
     try {
-        // Verificar si la alerta pertenece al usuario autenticado
         const result = await sql.query`
       SELECT AlertaID
       FROM Alertas
@@ -79,11 +77,10 @@ exports.actualizarEstadoAlerta = async (req, res) => {
 
 // Eliminar una alerta
 exports.eliminarAlerta = async (req, res) => {
-    const { id } = req.params;  // ID de la alerta
-    const usuarioId = req.user.id;  // Usuario autenticado
+    const { id } = req.params;  
+    const usuarioId = req.user.id;  
 
     try {
-        // Verificar si la alerta pertenece al usuario autenticado
         const result = await sql.query`
         SELECT AlertaID
         FROM Alertas
@@ -94,7 +91,6 @@ exports.eliminarAlerta = async (req, res) => {
             return res.status(404).json({ message: 'Alerta no encontrada o no tienes permiso para eliminarla' });
         }
 
-        // Eliminar la alerta
         await sql.query`
         DELETE FROM Alertas WHERE AlertaID = ${id} AND UsuarioID = ${usuarioId}
       `;

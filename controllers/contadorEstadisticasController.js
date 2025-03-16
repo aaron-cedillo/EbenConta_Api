@@ -10,10 +10,8 @@ const obtenerTotalClientes = async (req, res) => {
 
     const usuarioID = req.user.id;
 
-    // Conectar a la base de datos
     await connectDB();
 
-    // Crear una nueva instancia de Request
     const request = new sql.Request();
     request.input("UsuarioID", sql.Int, usuarioID);
 
@@ -21,7 +19,7 @@ const obtenerTotalClientes = async (req, res) => {
 
     res.json({ total: result.recordset[0].total });
   } catch (error) {
-    console.error("❌ Error al obtener el total de clientes:", error);
+    console.error("Error al obtener el total de clientes:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
@@ -36,10 +34,8 @@ const obtenerTotalFacturas = async (req, res) => {
 
     const usuarioID = req.user.id;
 
-    // Conectar a la base de datos
     await connectDB();
 
-    // Crear una nueva instancia de Request
     const request = new sql.Request();
     request.input("UsuarioID", sql.Int, usuarioID);
 
@@ -51,7 +47,7 @@ const obtenerTotalFacturas = async (req, res) => {
 
     res.json({ total: result.recordset[0].total });
   } catch (error) {
-    console.error("❌ Error al obtener el total de facturas:", error);
+    console.error("Error al obtener el total de facturas:", error);
     res.status(500).json({ error: "Error interno del servidor" });
   }
 };
