@@ -9,7 +9,7 @@ const authenticateJWT = (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, 'mi_clave_secreta');  // Aquí debes usar la misma clave secreta que usaste al crear el token
+    const decoded = jwt.verify(token, 'mi_clave_secreta'); 
     req.user = decoded;  // Asignamos el usuario decodificado al objeto req
     next();  // Llamamos a la siguiente función en el middleware
   } catch (error) {
