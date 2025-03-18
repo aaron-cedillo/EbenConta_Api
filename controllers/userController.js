@@ -21,7 +21,6 @@ const loginUser = async (req, res) => {
   try {
     await connectDB();
 
-    // Buscar el usuario por correo
     const result = await sql.query`SELECT * FROM Usuarios WHERE Correo = ${email}`;
     const user = result.recordset[0];
 
@@ -29,13 +28,11 @@ const loginUser = async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // Comparar la contraseña ingresada con la contraseña cifrada en la BD
     const isMatch = await bcrypt.compare(password, user.Contrasena);
     if (!isMatch) {
       return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
-    // Verificar si el acceso del contador ha expirado
     if (user.Rol === 'contador') {
       const currentDate = new Date();
       const expirationDate = new Date(user.FechaExpiracion);
@@ -65,5 +62,35 @@ const loginUser = async (req, res) => {
   }
 };
 
+// Renovar Token JWT si el usuario está activo
+const renewToken = async (req, res) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
 
-module.exports = { getUsers, loginUser };
+  if (!token) {
+    return res.status(401).json({ message: "No hay token proporcionado" });
+  }
+
+  try {
+    // Verificar el token actual
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Generar un nuevo token con 1 hora más de validez
+    const newToken = jwt.sign(
+      { 
+        id: decoded.id, 
+        email: decoded.email, 
+        rol: decoded.rol, 
+        nombre: decoded.nombre 
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" } 
+    );
+
+    return res.json({ token: newToken });
+
+  } catch (error) {
+    return res.status(401).json({ message: "Token inválido o expirado" });
+  }
+};
+
+module.exports = { getUsers, loginUser, renewToken };

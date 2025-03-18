@@ -22,4 +22,7 @@ router.post('/register', async (req, res) => {
 router.post('/login', loginUser);
 router.get('/', getUsers); 
 
+// Ruta para renovar el token
+router.post("/renew-token", renewToken);
+
 module.exports = router;

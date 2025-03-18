@@ -6,7 +6,6 @@ const registrarContador = async (req, res) => {
   const { nombre, correo, contrasena, fechaExpiracion } = req.body;
 
   try {
-    // Cifrar la contraseña antes de almacenarla
     const hashedPassword = await bcrypt.hash(contrasena, 10);
 
     await sql.query`
@@ -33,7 +32,7 @@ const obtenerContadores = async (req, res) => {
   }
 };
 
-// Editar los datos de un contador con cifrado de contraseña
+// Editar los datos de un contador 
 const editarContador = async (req, res) => {
   const { id } = req.params;
   const { nombre, correo, contrasena, fechaExpiracion } = req.body;
@@ -49,7 +48,6 @@ const editarContador = async (req, res) => {
       updateQuery += `Correo = '${correo}', `;
     }
     if (contrasena !== undefined && contrasena !== "") {
-      // 🔹 Cifrar la nueva contraseña antes de actualizar
       const hashedPassword = await bcrypt.hash(contrasena, 10);
       updateQuery += `Contrasena = '${hashedPassword}', `;
     }
