@@ -1,13 +1,17 @@
 const { sql } = require('../config/db');
+const bcrypt = require('bcrypt')
 
-// Registrar un contador
+// Registrar un contador con contraseña cifrada
 const registrarContador = async (req, res) => {
   const { nombre, correo, contrasena, fechaExpiracion } = req.body;
 
   try {
+    // Cifrar la contraseña antes de almacenarla
+    const hashedPassword = await bcrypt.hash(contrasena, 10);
+
     await sql.query`
       INSERT INTO Usuarios (Nombre, Correo, Contrasena, Rol, FechaExpiracion)
-      VALUES (${nombre}, ${correo}, ${contrasena}, 'contador', ${fechaExpiracion});
+      VALUES (${nombre}, ${correo}, ${hashedPassword}, 'contador', ${fechaExpiracion});
     `;
 
     res.status(201).json({ message: 'Contador registrado exitosamente' });
@@ -16,6 +20,7 @@ const registrarContador = async (req, res) => {
     res.status(500).json({ message: 'Error al registrar el contador', error: error.message });
   }
 };
+
 
 // Obtener todos los contadores registrados
 const obtenerContadores = async (req, res) => {
@@ -28,7 +33,7 @@ const obtenerContadores = async (req, res) => {
   }
 };
 
-// Editar los datos de un contador
+// Editar los datos de un contador con cifrado de contraseña
 const editarContador = async (req, res) => {
   const { id } = req.params;
   const { nombre, correo, contrasena, fechaExpiracion } = req.body;
@@ -43,8 +48,10 @@ const editarContador = async (req, res) => {
     if (correo) {
       updateQuery += `Correo = '${correo}', `;
     }
-    if (contrasena !== undefined) {
-      updateQuery += `Contrasena = '${contrasena}', `;
+    if (contrasena !== undefined && contrasena !== "") {
+      // 🔹 Cifrar la nueva contraseña antes de actualizar
+      const hashedPassword = await bcrypt.hash(contrasena, 10);
+      updateQuery += `Contrasena = '${hashedPassword}', `;
     }
     if (fechaExpiracion) {
       updateQuery += `FechaExpiracion = '${fechaExpiracion}', `;
