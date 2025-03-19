@@ -52,6 +52,9 @@ nodemon → nodemon@3.0.3 (Reinicia el servidor automáticamente en cambios)
 ✔️ Tokens que expiran después de 1 hora de inactividad.
 ✔️ Si el usuario sigue activo, el token se renueva automáticamente.
 
+✅ Ejecución:
+Para ejecutar la api, usar el comando node server.js
+
 📌 Configuración de la Base de Datos
 1️⃣ Editar el archivo .env
 Crea un archivo .env en la raíz del proyecto y agrega la JWT_SECRET=mi_clave_secreta, recomendable para mayor seguridad mover la conexion a la bd al archivo .env
